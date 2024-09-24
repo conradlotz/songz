@@ -134,20 +134,25 @@ const Songs = () => {
             </div>
             <TabsContent value="match" className="border-none p-0 outline-none">
               {songs ? (
-                <div className="flex flex-col sm:flex-row justify-between gap-4">
+                <div className="flex flex-col sm:flex-row justify-between gap-8">
                   {[songs.song1, songs.song2].map((song, index) => (
-                    <div key={index} className="flex flex-col items-center">
-                      <img 
-                        src={song["Album Image URL"] || PLACEHOLDER_IMAGE} 
-                        alt={song["Track Name"] || 'Unknown Track'} 
-                        className="w-32 h-32 object-cover rounded-md" 
-                      />
-                      <Button 
+                    <div key={index} className="flex-1">
+                      <div 
+                        className="relative overflow-hidden rounded-lg shadow-lg transition-transform duration-300 ease-in-out hover:scale-105 cursor-pointer"
                         onClick={() => handleSelectSong(song['Track URI'], songs[index === 0 ? 'song2' : 'song1']['Track URI'])}
-                        className="mt-2 w-full"
                       >
-                        Select
-                      </Button>
+                        <img 
+                          src={song["Album Image URL"] || PLACEHOLDER_IMAGE} 
+                          alt={song["Track Name"] || 'Unknown Track'} 
+                          className="w-full h-auto object-cover" 
+                        />
+                        <div className="absolute inset-0 bg-black bg-opacity-40 flex items-end p-4">
+                          <div>
+                            <h3 className="text-white text-xl font-bold">{song["Track Name"]}</h3>
+                            <p className="text-white text-sm">{song.artist}</p>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -229,16 +234,22 @@ const TopTracksContent: React.FC<{ tracks: TopTrack[] }> = ({ tracks }) => {
     <div className="space-y-4">
       <h2 className="text-2xl font-semibold tracking-tight">Top 100 Tracks</h2>
       <ScrollArea className="h-[600px]">
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {tracks.map((track) => (
             <div key={track.id} className="flex flex-col items-center">
-              <img
-                src={track.albumImageUrl || PLACEHOLDER_IMAGE}
-                alt={track.trackName || 'Unknown Track'}
-                className="w-32 h-32 object-cover rounded-md"
-              />
-              <p className="mt-2 text-sm font-medium text-center">{track.trackName}</p>
-              <p className="text-xs font-semibold">Rating: {track.rating.toFixed(2)}</p>
+              <div className="relative overflow-hidden rounded-lg shadow-lg transition-transform duration-300 ease-in-out hover:scale-105">
+                <img
+                  src={track.albumImageUrl || PLACEHOLDER_IMAGE}
+                  alt={track.trackName || 'Unknown Track'}
+                  className="w-full h-auto object-cover"
+                />
+                <div className="absolute inset-0 bg-black bg-opacity-40 flex items-end p-2">
+                  <div>
+                    <p className="text-white text-sm font-medium">{track.trackName}</p>
+                    <p className="text-white text-xs font-semibold">Rating: {track.rating.toFixed(2)}</p>
+                  </div>
+                </div>
+              </div>
             </div>
           ))}
         </div>
