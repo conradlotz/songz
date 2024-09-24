@@ -55,7 +55,7 @@ const Songs = () => {
       const response = await axios.get('/api/song-match', {
         params: { userId: USER_ID }
       });
-      setSongs(response.data);
+      setSongs(response.data as { song1: Song; song2: Song });
     } catch (error) {
       setMessage('Failed to fetch songs.');
     }
