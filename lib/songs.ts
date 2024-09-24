@@ -136,14 +136,27 @@ async function getRandomSongs(database: any, songs: any[], userId: number): Prom
     }
 }
 
-export const initializeDatabase = async (): Promise<void> => {
-  const db = await openDb();
-  await db.exec(`
-    CREATE TABLE IF NOT EXISTS ratings (
-      "Track URI" TEXT PRIMARY KEY,
-      rating REAL DEFAULT 1500
-    )
-  `);
-  
-  // ... (rest of your initialization code)
+export const getTopTracks = async (encodedUserId: string): Promise<any[]> => {
+  try {
+    const database = await openDb();
+    const userId = parseInt(decrypt(encodedUserId), 10);
+    
+    const topTracks = await database.all(`
+      SELECT s.*, r.rating
+      FROM songs s
+      JOIN ratings r ON s."Track URI" = r.song_uri
+      WHERE r.song_uri IN (
+        SELECT song1_uri FROM user_matches WHERE user_id = ?
+        UNION
+        SELECT song2_uri FROM user_matches WHERE user_id = ?
+      )
+      ORDER BY r.rating DESC
+      LIMIT 100
+    `, [userId, userId]);
+
+    return topTracks;
+  } catch (error) {
+    console.error('Error in getTopTracks:', error);
+    throw error;
+  }
 };
