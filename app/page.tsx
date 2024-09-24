@@ -27,6 +27,12 @@ interface TopTrack {
   rating: number;
 }
 
+interface SpotifyTrack {
+  'Track URI': string;
+  'Track Name': string;
+  // Add other properties as needed
+}
+
 let USER_ID = '';
 
 const PLACEHOLDER_IMAGE = 'https://example.com/placeholder.jpg'; // Replace with your actual placeholder image URL
@@ -63,8 +69,8 @@ const Songs = () => {
 
   const fetchTopTracks = async () => {
     try {
-      const response = await axios.get('/api/top-tracks');
-      setTopTracks(response.data.map((track: any) => ({
+      const response = await axios.get<SpotifyTrack[]>('/api/top-tracks');
+      setTopTracks(response.data.map((track) => ({
         id: track['Track URI'],
         trackName: track['Track Name'],
         albumImageUrl: track['Album Image URL'],
