@@ -33,6 +33,7 @@ interface SpotifyTrack {
   'Track Name': string;
   'Album Image URL': string;
   rating?: number; // or whatever type 'rating' is supposed to be
+  'Artist Name': string;
   // Add other properties as needed
 }
 
@@ -43,7 +44,6 @@ const PLACEHOLDER_IMAGE = '/images/placeholder.webp'; // Adjust the path as need
 const Songs = () => {
   const [songs, setSongs] = useState<{ song1: Song; song2: Song } | null>(null);
   const [message, setMessage] = useState('');
-  const [activeTab, setActiveTab] = useState('songs');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [topTracks, setTopTracks] = useState<TopTrack[]>([]);
 
@@ -54,8 +54,6 @@ const Songs = () => {
       setIsAuthenticated(true);
       fetchSongs();
       fetchTopTracks();
-    } else {
-      setActiveTab('signin');
     }
   }, []);
 
@@ -77,6 +75,7 @@ const Songs = () => {
         id: track['Track URI'],
         trackName: track['Track Name'],
         albumImageUrl: track['Album Image URL'],
+        artistName: track['Artist Name'] as string,
         rating: (track as any).rating // Type assertion
       })));
     } catch (error) {
@@ -101,7 +100,6 @@ const Songs = () => {
     destroyCookie(null, 'cookie_authenticated');
     destroyCookie(null, 'cookie_user_encrypt_id');
     setIsAuthenticated(false);
-    setActiveTab('signin');
   };
 
   const handleSignIn = async (email: string, password: string) => {
@@ -110,7 +108,6 @@ const Songs = () => {
       if (response.data && typeof response.data === 'object' && 'success' in response.data) {
         if (response.data.success) {
           setIsAuthenticated(true);
-          setActiveTab('songs');
           fetchSongs();
         } else {
           setMessage('Sign in failed. Please try again.');
@@ -123,9 +120,20 @@ const Songs = () => {
     }
   };
 
-  if (activeTab === 'signin' || !isAuthenticated) {
-    return <SignIn onSignIn={handleSignIn} message={message} />;
-  }
+  const handleSignUp = async (email: string, password: string) => {
+    try {
+      const response = await axios.post('/api/signup', { email, password });
+      if (response.data.success) {
+        setMessage('Sign up successful. Please sign in.');
+        setIsAuthenticated(true);
+        fetchSongs();
+      } else {
+        setMessage('Sign up failed. Please try again.');
+      }
+    } catch (error) {
+      setMessage('An error occurred during sign up.');
+    }
+  };
 
   return (
     <div className="flex items-center justify-center min-h-screen p-4">
@@ -134,48 +142,72 @@ const Songs = () => {
           <CardTitle className="text-2xl font-bold text-center">Song Selection</CardTitle>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="match" className="h-full space-y-6">
+          <Tabs defaultValue={isAuthenticated ? "match" : "signin"} className="h-full space-y-6">
             <div className="space-between flex items-center">
               <TabsList>
-                <TabsTrigger value="match">Match</TabsTrigger>
-                <TabsTrigger value="top100">Top 100</TabsTrigger>
+                {isAuthenticated ? (
+                  <>
+                    <TabsTrigger value="match">Match</TabsTrigger>
+                    <TabsTrigger value="top100">Top 100</TabsTrigger>
+                  </>
+                ) : (
+                  <>
+                    <TabsTrigger value="signin">Sign In</TabsTrigger>
+                    <TabsTrigger value="signup">Sign Up</TabsTrigger>
+                  </>
+                )}
               </TabsList>
             </div>
-            <TabsContent value="match" className="border-none p-0 outline-none">
-              {songs ? (
-                <div className="flex flex-row justify-between gap-4">
-                  {[songs.song1, songs.song2].map((song, index) => (
-                    <div key={index} className="flex-1 min-w-[45%]">
-                      <div 
-                        className="relative overflow-hidden rounded-lg shadow-lg transition-transform duration-300 ease-in-out hover:scale-105 cursor-pointer"
-                        onClick={() => handleSelectSong(song['Track URI'], songs[index === 0 ? 'song2' : 'song1']['Track URI'])}
-                      >
-                        <img 
-                          src={song["Album Image URL"] || PLACEHOLDER_IMAGE} 
-                          alt={song["Track Name"] || 'Unknown Track'} 
-                          className="w-full h-auto object-cover aspect-square" 
-                        />
-                        <div className="absolute inset-0 bg-black bg-opacity-40 flex items-end p-2">
-                          <div>
-                            <h3 className="text-white text-lg font-bold truncate">{song["Track Name"]}</h3>
-                            <p className="text-white text-xs truncate">{song.artist}</p>
+            {isAuthenticated ? (
+              <>
+                <TabsContent value="match" className="border-none p-0 outline-none">
+                  {songs ? (
+                    <div className="flex flex-row justify-between gap-4">
+                      {[songs.song1, songs.song2].map((song, index) => (
+                        <div key={index} className="flex-1 min-w-[45%]">
+                          <div 
+                            className="relative overflow-hidden rounded-lg shadow-lg transition-transform duration-300 ease-in-out hover:scale-105 cursor-pointer"
+                            onClick={() => handleSelectSong(song['Track URI'], songs[index === 0 ? 'song2' : 'song1']['Track URI'])}
+                          >
+                            <img 
+                              src={song["Album Image URL"] || PLACEHOLDER_IMAGE} 
+                              alt={song["Track Name"] || 'Unknown Track'} 
+                              className="w-full h-auto object-cover aspect-square" 
+                            />
+                            <div className="absolute inset-0 bg-black bg-opacity-40 flex items-end p-2">
+                              <div>
+                                <h3 className="text-white text-lg font-bold truncate">{song["Track Name"]}</h3>
+                                <p className="text-white text-xs truncate">{song.artist}</p>
+                              </div>
+                            </div>
                           </div>
                         </div>
-                      </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-center">No more songs to match.</p>
-              )}
-            </TabsContent>
-            <TabsContent value="top100" className="border-none p-0 outline-none">
-              <TopTracksContent tracks={topTracks} />
-            </TabsContent>
+                  ) : (
+                    <p className="text-center">No more songs to match.</p>
+                  )}
+                </TabsContent>
+                <TabsContent value="top100" className="border-none p-0 outline-none">
+                  <TopTracksContent tracks={topTracks} />
+                </TabsContent>
+              </>
+            ) : (
+              <>
+                <TabsContent value="signin" className="border-none p-0 outline-none">
+                  <SignIn onSignIn={handleSignIn} message={message} />
+                </TabsContent>
+                <TabsContent value="signup" className="border-none p-0 outline-none">
+                  <SignUp onSignUp={handleSignUp} message={message} />
+                </TabsContent>
+              </>
+            )}
           </Tabs>
-          <Button onClick={handleSignOut} variant="destructive" className="mt-4 w-full">
-            Sign Out
-          </Button>
+          {isAuthenticated && (
+            <Button onClick={handleSignOut} variant="destructive" className="mt-4 w-full">
+              Sign Out
+            </Button>
+          )}
           {message && (
             <Alert variant="destructive" className="mt-4">
               <AlertDescription>{message}</AlertDescription>
@@ -202,39 +234,75 @@ const SignIn: React.FC<SignInProps> = ({ onSignIn, message }) => {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle className="text-2xl font-bold text-center">Sign In</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <Input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Email"
-              required
-            />
-            <Input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Password"
-              required
-            />
-            <Button type="submit" className="w-full">
-              Sign In
-            </Button>
-          </form>
-          {message && (
-            <Alert variant="destructive" className="mt-4">
-              <AlertDescription>{message}</AlertDescription>
-            </Alert>
-          )}
-        </CardContent>
-      </Card>
-    </div>
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <Input
+        type="email"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        placeholder="Email"
+        required
+      />
+      <Input
+        type="password"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        placeholder="Password"
+        required
+      />
+      <Button type="submit" className="w-full">
+        Sign In
+      </Button>
+    </form>
+  );
+};
+
+interface SignUpProps {
+  onSignUp: (email: string, password: string) => void;
+  message: string;
+}
+
+const SignUp: React.FC<SignUpProps> = ({ onSignUp, message }) => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const response = await fetch('/api/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+      if (response.ok) {
+        onSignUp(email, password);
+      } else {
+        throw new Error('Signup failed');
+      }
+    } catch (error) {
+      console.error('Signup error:', error);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <Input
+        type="email"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        placeholder="Email"
+        required
+      />
+      <Input
+        type="password"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        placeholder="Password"
+        required
+      />
+      <Button type="submit" className="w-full">
+        Sign Up
+      </Button>
+    </form>
   );
 };
 
