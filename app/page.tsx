@@ -37,7 +37,7 @@ interface SpotifyTrack {
 
 let USER_ID = '';
 
-const PLACEHOLDER_IMAGE = 'images/placeholder.webp'; // Replace with your actual placeholder image URL
+const PLACEHOLDER_IMAGE = './image/placeholder.webp'; // Replace with your actual placeholder image URL
 
 const Songs = () => {
   const [songs, setSongs] = useState<{ song1: Song; song2: Song } | null>(null);
@@ -247,7 +247,7 @@ const TopTracksContent: React.FC<{ tracks: TopTrack[] }> = ({ tracks }) => {
             <div key={track.id} className="flex flex-col items-center">
               <div className="relative overflow-hidden rounded-lg shadow-lg transition-transform duration-300 ease-in-out hover:scale-105">
                 <img
-                  src={track.albumImageUrl || "/path/to/placeholder-image.jpg"}
+                  src={track.albumImageUrl || PLACEHOLDER_IMAGE }
                   alt={track.trackName || 'Unknown Track'}
                   className="w-full h-auto object-cover"
                 />
