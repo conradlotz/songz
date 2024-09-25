@@ -37,7 +37,7 @@ interface SpotifyTrack {
 
 let USER_ID = '';
 
-const PLACEHOLDER_IMAGE = 'https://example.com/placeholder.jpg'; // Replace with your actual placeholder image URL
+const PLACEHOLDER_IMAGE = 'images/placeholder.webp'; // Replace with your actual placeholder image URL
 
 const Songs = () => {
   const [songs, setSongs] = useState<{ song1: Song; song2: Song } | null>(null);
@@ -267,48 +267,5 @@ const TopTracksContent: React.FC<{ tracks: TopTrack[] }> = ({ tracks }) => {
     </div>
   );
 };
-
-const TopTracks = () => {
-  const { data: tracks, error } = useSWR('/api/top-tracks', fetcher, {
-    refreshInterval: 30000 // Refresh every 30 seconds
-  })
-
-  return (
-    <div>
-      {tracks ? (
-        tracks.map((track) => (
-          <div key={track.id} className="flex items-center space-x-4">
-            <div className="relative w-16 h-16">
-              <Image
-                src={track.albumCoverUrl}
-                alt={track.trackName}
-                layout="fill"
-                objectFit="cover"
-                className="rounded-md"
-                placeholder="blur"
-                blurDataURL={track.albumCoverUrl}
-              />
-            </div>
-            <div>
-              <p className="text-sm font-medium">{track.trackName}</p>
-              <p className="text-xs text-gray-500">{track.artistName}</p>
-            </div>
-          </div>
-        ))
-      ) : (
-        // Skeleton loading
-        Array(5).fill(0).map((_, i) => (
-          <div key={i} className="flex items-center space-x-4 animate-pulse">
-            <div className="w-16 h-16 bg-gray-300 rounded-md"></div>
-            <div>
-              <div className="w-24 h-4 bg-gray-300 rounded"></div>
-              <div className="w-16 h-3 mt-2 bg-gray-300 rounded"></div>
-            </div>
-          </div>
-        ))
-      )}
-    </div>
-  )
-}
 
 export default Songs;
