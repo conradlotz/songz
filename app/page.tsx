@@ -9,6 +9,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import Image from 'next/image';
+// Removed the SWR import due to the error
 
 interface Song {
   id: string;
@@ -245,16 +247,17 @@ const TopTracksContent: React.FC<{ tracks: TopTrack[] }> = ({ tracks }) => {
             <div key={track.id} className="flex flex-col items-center">
               <div className="relative overflow-hidden rounded-lg shadow-lg transition-transform duration-300 ease-in-out hover:scale-105">
                 <img
-                  src={track.albumImageUrl || PLACEHOLDER_IMAGE}
+                  src={track.albumImageUrl || "/path/to/placeholder-image.jpg"}
                   alt={track.trackName || 'Unknown Track'}
                   className="w-full h-auto object-cover"
                 />
                 <div className="absolute inset-0 bg-black bg-opacity-40 flex items-end p-2">
-                  <div>
-                    <p className="text-white text-sm font-medium">{track.trackName}</p>
-                    <p className="text-white text-xs font-semibold">Rating: {track.rating.toFixed(2)}</p>
-                  </div>
+                  <p className="text-white text-xs font-semibold">Rating: {track.rating.toFixed(2)}</p>
                 </div>
+              </div>
+              <div className="mt-2 text-center">
+                <p className="text-sm font-medium">{track.trackName}</p>
+                <p className="text-xs text-gray-500">{track.artistName}</p>
               </div>
             </div>
           ))}
@@ -264,5 +267,48 @@ const TopTracksContent: React.FC<{ tracks: TopTrack[] }> = ({ tracks }) => {
     </div>
   );
 };
+
+const TopTracks = () => {
+  const { data: tracks, error } = useSWR('/api/top-tracks', fetcher, {
+    refreshInterval: 30000 // Refresh every 30 seconds
+  })
+
+  return (
+    <div>
+      {tracks ? (
+        tracks.map((track) => (
+          <div key={track.id} className="flex items-center space-x-4">
+            <div className="relative w-16 h-16">
+              <Image
+                src={track.albumCoverUrl}
+                alt={track.trackName}
+                layout="fill"
+                objectFit="cover"
+                className="rounded-md"
+                placeholder="blur"
+                blurDataURL={track.albumCoverUrl}
+              />
+            </div>
+            <div>
+              <p className="text-sm font-medium">{track.trackName}</p>
+              <p className="text-xs text-gray-500">{track.artistName}</p>
+            </div>
+          </div>
+        ))
+      ) : (
+        // Skeleton loading
+        Array(5).fill(0).map((_, i) => (
+          <div key={i} className="flex items-center space-x-4 animate-pulse">
+            <div className="w-16 h-16 bg-gray-300 rounded-md"></div>
+            <div>
+              <div className="w-24 h-4 bg-gray-300 rounded"></div>
+              <div className="w-16 h-3 mt-2 bg-gray-300 rounded"></div>
+            </div>
+          </div>
+        ))
+      )}
+    </div>
+  )
+}
 
 export default Songs;
