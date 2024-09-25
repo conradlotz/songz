@@ -9,8 +9,6 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import Image from 'next/image';
-// Removed the SWR import due to the error
 
 interface Song {
   id: string;
@@ -32,12 +30,14 @@ interface TopTrack {
 interface SpotifyTrack {
   'Track URI': string;
   'Track Name': string;
+  'Album Image URL': string;
+  rating?: number; // or whatever type 'rating' is supposed to be
   // Add other properties as needed
 }
 
 let USER_ID = '';
 
-const PLACEHOLDER_IMAGE = './image/placeholder.webp'; // Replace with your actual placeholder image URL
+const PLACEHOLDER_IMAGE = '/images/placeholder.webp'; // Adjust the path as needed
 
 const Songs = () => {
   const [songs, setSongs] = useState<{ song1: Song; song2: Song } | null>(null);
@@ -76,7 +76,7 @@ const Songs = () => {
         id: track['Track URI'],
         trackName: track['Track Name'],
         albumImageUrl: track['Album Image URL'],
-        rating: track.rating
+        rating: (track as any).rating // Type assertion
       })));
     } catch (error) {
       setMessage('Failed to fetch top tracks.');
@@ -142,9 +142,9 @@ const Songs = () => {
             </div>
             <TabsContent value="match" className="border-none p-0 outline-none">
               {songs ? (
-                <div className="flex flex-col sm:flex-row justify-between gap-8">
+                <div className="flex flex-row justify-between gap-4">
                   {[songs.song1, songs.song2].map((song, index) => (
-                    <div key={index} className="flex-1">
+                    <div key={index} className="flex-1 min-w-[45%]">
                       <div 
                         className="relative overflow-hidden rounded-lg shadow-lg transition-transform duration-300 ease-in-out hover:scale-105 cursor-pointer"
                         onClick={() => handleSelectSong(song['Track URI'], songs[index === 0 ? 'song2' : 'song1']['Track URI'])}
@@ -152,12 +152,12 @@ const Songs = () => {
                         <img 
                           src={song["Album Image URL"] || PLACEHOLDER_IMAGE} 
                           alt={song["Track Name"] || 'Unknown Track'} 
-                          className="w-full h-auto object-cover" 
+                          className="w-full h-auto object-cover aspect-square" 
                         />
-                        <div className="absolute inset-0 bg-black bg-opacity-40 flex items-end p-4">
+                        <div className="absolute inset-0 bg-black bg-opacity-40 flex items-end p-2">
                           <div>
-                            <h3 className="text-white text-xl font-bold">{song["Track Name"]}</h3>
-                            <p className="text-white text-sm">{song.artist}</p>
+                            <h3 className="text-white text-lg font-bold truncate">{song["Track Name"]}</h3>
+                            <p className="text-white text-xs truncate">{song.artist}</p>
                           </div>
                         </div>
                       </div>
@@ -247,9 +247,14 @@ const TopTracksContent: React.FC<{ tracks: TopTrack[] }> = ({ tracks }) => {
             <div key={track.id} className="flex flex-col items-center">
               <div className="relative overflow-hidden rounded-lg shadow-lg transition-transform duration-300 ease-in-out hover:scale-105">
                 <img
-                  src={track.albumImageUrl || PLACEHOLDER_IMAGE }
+                  src={track.albumImageUrl || PLACEHOLDER_IMAGE}
                   alt={track.trackName || 'Unknown Track'}
                   className="w-full h-auto object-cover"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.onerror = null; // Prevent infinite loop
+                    target.src = PLACEHOLDER_IMAGE;
+                  }}
                 />
                 <div className="absolute inset-0 bg-black bg-opacity-40 flex items-end p-2">
                   <p className="text-white text-xs font-semibold">Rating: {track.rating.toFixed(2)}</p>
