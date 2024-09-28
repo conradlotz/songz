@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { parseCookies, destroyCookie } from 'nookies';
+import { useQuery, useQueryClient, QueryClient, QueryClientProvider } from 'react-query';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import Image from 'next/image';
+import { Loader2 } from 'lucide-react';
 
 interface Song {
   id: string;
@@ -41,6 +43,16 @@ let USER_ID = '';
 
 const PLACEHOLDER_IMAGE = '/image/placeholder.webp'; // Adjust the path if needed
 
+const queryClient = new QueryClient();
+
+const SongsWrapper = () => {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <Songs />
+    </QueryClientProvider>
+  );
+};
+
 const Songs = () => {
   const [songs, setSongs] = useState<{ song1: Song; song2: Song } | null>(null);
   const [message, setMessage] = useState('');
@@ -48,49 +60,48 @@ const Songs = () => {
   const [topTracks, setTopTracks] = useState<TopTrack[]>([]);
   const [activeTab, setActiveTab] = useState<string>("match");
 
+  const { data: songsData, isLoading: isSongsLoading, refetch: refetchSongs } = useQuery(
+    ['songs', USER_ID],
+    () => axios.get('/api/song-match', { params: { userId: USER_ID } }).then(res => res.data),
+    { enabled: isAuthenticated }
+  );
+
+  const { data: topTracksData, isLoading: isTopTracksLoading } = useQuery(
+    'topTracks',
+    () => axios.get<SpotifyTrack[]>('/api/top-tracks').then(res => res.data) as Promise<SpotifyTrack[]>,
+    { enabled: isAuthenticated }
+  );
+
   useEffect(() => {
     const cookies = parseCookies();
     if (cookies.cookie_authenticated === 'true') {
       USER_ID = cookies.cookie_user_encrypt_id;
       setIsAuthenticated(true);
-      setActiveTab("match"); // Set the active tab to "match" when authenticated
-      fetchSongs();
-      fetchTopTracks();
+      setActiveTab("match");
     } else {
-      setActiveTab("signin"); // Set the active tab to "signin" when not authenticated
+      setActiveTab("signin");
     }
   }, []);
 
-  const fetchSongs = async () => {
-    try {
-      const response = await axios.get('/api/song-match', {
-        params: { userId: USER_ID }
-      });
-      setSongs(response.data as { song1: Song; song2: Song });
-    } catch (error) {
-      setMessage('Failed to fetch songs.');
+  useEffect(() => {
+    if (songsData && songsData.song1 && songsData.song2) {
+      setSongs(songsData as { song1: Song; song2: Song });
+    } else {
+      setSongs(null);
     }
-  };
+  }, [songsData]);
 
-  const fetchTopTracks = async () => {
-    try {
-      const response = await axios.get<SpotifyTrack[]>('/api/top-tracks');
-      console.log('API response:', response.data); // Log the entire response
-      setTopTracks(response.data.map((track) => {
-        console.log('Processing track:', track); // Log each track
-        return {
-          id: track['Track URI'],
-          trackName: track['Track Name'],
-          albumImageUrl: track['Album Image URL'],
-          artistName: track['Artist Name'] as string,
-          rating: (track as any).rating // Type assertion
-        };
-      }));
-    } catch (error) {
-      console.error('Error fetching top tracks:', error);
-      setMessage('Failed to fetch top tracks.');
+  useEffect(() => {
+    if (topTracksData) {
+      setTopTracks(topTracksData.map((track) => ({
+        id: track['Track URI'],
+        trackName: track['Track Name'],
+        albumImageUrl: track['Album Image URL'],
+        artistName: track['Artist Name'] as string,
+        rating: (track as any).rating
+      })));
     }
-  };
+  }, [topTracksData]);
 
   const handleSelectSong = async (winnerId: string, loserId: string) => {
     try {
@@ -99,7 +110,7 @@ const Songs = () => {
         winnerId,
         loserId,
       });
-      fetchSongs(); // Fetch new songs after updating
+      refetchSongs();
     } catch (error) {
       setMessage('Failed to update match.');
     }
@@ -117,7 +128,7 @@ const Songs = () => {
       if (response.data && typeof response.data === 'object' && 'success' in response.data) {
         if (response.data.success) {
           setIsAuthenticated(true);
-          fetchSongs();
+          refetchSongs();
         } else {
           setMessage('Sign in failed. Please try again.');
         }
@@ -135,7 +146,7 @@ const Songs = () => {
       if ((response.data as { success: boolean }).success) {
         setMessage('Sign up successful. Please sign in.');
         setIsAuthenticated(true);
-        fetchSongs();
+        refetchSongs();
       } else {
         setMessage('Sign up failed. Please try again.');
       }
@@ -170,7 +181,11 @@ const Songs = () => {
             {isAuthenticated ? (
               <>
                 <TabsContent value="match" className="border-none p-0 outline-none">
-                  {songs ? (
+                  {isSongsLoading ? (
+                    <div className="flex justify-center items-center h-64">
+                      <Loader2 className="h-8 w-8 animate-spin" />
+                    </div>
+                  ) : songs && songs.song1 && songs.song2 ? (
                     <div className="flex flex-row justify-between gap-4">
                       {[songs.song1, songs.song2].map((song, index) => (
                         <div key={index} className="flex-1 min-w-[45%]">
@@ -198,7 +213,13 @@ const Songs = () => {
                   )}
                 </TabsContent>
                 <TabsContent value="top100" className="border-none p-0 outline-none">
-                  <TopTracksContent tracks={topTracks} />
+                  {isTopTracksLoading ? (
+                    <div className="flex justify-center items-center h-64">
+                      <Loader2 className="h-8 w-8 animate-spin" />
+                    </div>
+                  ) : (
+                    <TopTracksContent tracks={topTracks} />
+                  )}
                 </TabsContent>
               </>
             ) : (
@@ -348,4 +369,4 @@ const TopTracksContent: React.FC<{ tracks: TopTrack[] }> = ({ tracks }) => {
   );
 };
 
-export default Songs;
+export default SongsWrapper;
