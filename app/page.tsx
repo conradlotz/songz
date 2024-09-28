@@ -37,7 +37,6 @@ interface SpotifyTrack {
   'Artist Name': string;
   // Add other properties as needed
 }
-
 let USER_ID = '';
 
 const PLACEHOLDER_IMAGE = '/image/placeholder.webp'; // Adjust the path if needed
@@ -133,7 +132,7 @@ const Songs = () => {
   const handleSignUp = async (email: string, password: string) => {
     try {
       const response = await axios.post('/api/signup', { email, password });
-      if (response.data.success) {
+      if ((response.data as { success: boolean }).success) {
         setMessage('Sign up successful. Please sign in.');
         setIsAuthenticated(true);
         fetchSongs();
