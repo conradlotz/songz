@@ -12,6 +12,12 @@ import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import Image from 'next/image';
 import { Loader2 } from 'lucide-react';
+import { signOut } from "next-auth/react";
+// Remove the following line if not needed:
+// import { FaSpotify } from 'react-icons/fa';
+
+// ... Use FaSpotify in your component, for example:
+// <FaSpotify className="text-green-500" />
 
 interface Song {
   id: string;
@@ -59,6 +65,9 @@ const Songs = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [topTracks, setTopTracks] = useState<TopTrack[]>([]);
   const [activeTab, setActiveTab] = useState<string>("match");
+  const [currentMatchupId, setCurrentMatchupId] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const queryClient = useQueryClient();
 
   const { data: songsData, isLoading: isSongsLoading, refetch: refetchSongs } = useQuery(
     ['songs', USER_ID],
@@ -70,6 +79,12 @@ const Songs = () => {
     'topTracks',
     () => axios.get<SpotifyTrack[]>('/api/top-tracks').then(res => res.data) as Promise<SpotifyTrack[]>,
     { enabled: isAuthenticated }
+  );
+
+  const { data: currentMatchup, refetch } = useQuery(
+    ['matchup', currentMatchupId],
+    () => axios.get(`/api/matchup/${currentMatchupId}`).then(res => res.data),
+    { enabled: !!currentMatchupId, onSettled: () => setIsLoading(false) }
   );
 
   useEffect(() => {
@@ -102,6 +117,13 @@ const Songs = () => {
       })));
     }
   }, [topTracksData]);
+
+  useEffect(() => {
+    if (currentMatchup) {
+      // Preload the next matchup
+      queryClient.prefetchQuery(['matchup', currentMatchup.nextId], () => fetchMatchup(currentMatchup.nextId));
+    }
+  }, [currentMatchup, queryClient]);
 
   const handleSelectSong = async (winnerId: string, loserId: string) => {
     try {
@@ -155,6 +177,37 @@ const Songs = () => {
     }
   };
 
+  const handleClick = (newMatchupId) => {
+    setIsLoading(true);
+    setCurrentMatchupId(newMatchupId);
+  };
+
+  const handleNext = (newMatchupId) => {
+    setIsLoading(true);
+    setCurrentMatchupId(newMatchupId);
+  };
+
+  const handleSkip = async () => {
+    setIsLoading(true);
+    try {
+      const response = await axios.get('/api/song-match', { params: { userId: USER_ID } });
+      if (response.data && response.data.song1 && response.data.song2) {
+        setSongs(response.data as { song1: Song; song2: Song });
+      } else {
+        setSongs(null);
+      }
+    } catch (error) {
+      console.error('Error skipping matchup:', error);
+      setMessage('Failed to get new matchup.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const openSpotify = (trackUrl) => {
+    window.open(trackUrl, '_blank');
+  };
+
   return (
     <div className="flex items-center justify-center min-h-screen p-4">
       <Card className="w-full max-w-4xl">
@@ -181,32 +234,45 @@ const Songs = () => {
             {isAuthenticated ? (
               <>
                 <TabsContent value="match" className="border-none p-0 outline-none">
-                  {isSongsLoading ? (
+                  {isLoading ? (
+                    <div className="flex justify-center items-center h-64">
+                      <Loader2 className="h-8 w-8 animate-spin" />
+                    </div>
+                  ) : isSongsLoading ? (
                     <div className="flex justify-center items-center h-64">
                       <Loader2 className="h-8 w-8 animate-spin" />
                     </div>
                   ) : songs && songs.song1 && songs.song2 ? (
-                    <div className="flex flex-row justify-between gap-4">
-                      {[songs.song1, songs.song2].map((song, index) => (
-                        <div key={index} className="flex-1 min-w-[45%]">
-                          <div 
-                            className="relative overflow-hidden rounded-lg shadow-lg transition-transform duration-300 ease-in-out hover:scale-105 cursor-pointer"
-                            onClick={() => handleSelectSong(song['Track URI'], songs[index === 0 ? 'song2' : 'song1']['Track URI'])}
-                          >
-                            <img 
-                              src={song["Album Image URL"] || PLACEHOLDER_IMAGE} 
-                              alt={song["Track Name"] || 'Unknown Track'} 
-                              className="w-full h-auto object-cover aspect-square" 
-                            />
-                            <div className="absolute inset-0 bg-black bg-opacity-40 flex items-end p-2">
-                              <div>
-                                <h3 className="text-white text-lg font-bold truncate">{song["Track Name"]}</h3>
-                                <p className="text-white text-xs truncate">{song.artist}</p>
+                    <div className="space-y-4">
+                      <div className="flex flex-row justify-between gap-4">
+                        {[songs.song1, songs.song2].map((song, index) => (
+                          <div key={index} className="flex-1 min-w-[45%]">
+                            <div 
+                              className="relative overflow-hidden rounded-lg shadow-lg transition-transform duration-300 ease-in-out hover:scale-105 cursor-pointer"
+                              onClick={() => handleSelectSong(song['Track URI'], songs[index === 0 ? 'song2' : 'song1']['Track URI'])}
+                            >
+                              <img 
+                                src={song["Album Image URL"] || PLACEHOLDER_IMAGE} 
+                                alt={song["Track Name"] || 'Unknown Track'} 
+                                className="w-full h-auto object-cover aspect-square" 
+                              />
+                              <div className="absolute inset-0 bg-black bg-opacity-40 flex items-end p-2">
+                                <div>
+                                  <h3 className="text-white text-lg font-bold truncate">
+                                    {song["Track Name"]} - {song["Artist Name(s)"]}
+                                  </h3>
+                                  <p className="text-white text-xs truncate">{song.artist}</p>
+                                </div>
                               </div>
                             </div>
                           </div>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
+                      <div className="flex justify-center mt-4">
+                        <Button onClick={handleSkip} variant="outline">
+                          Skip
+                        </Button>
+                      </div>
                     </div>
                   ) : (
                     <p className="text-center">No more songs to match.</p>
@@ -234,8 +300,12 @@ const Songs = () => {
             )}
           </Tabs>
           {isAuthenticated && (
-            <Button onClick={handleSignOut} variant="destructive" className="mt-4 w-full">
-              Sign Out
+            <Button
+              onClick={() => signOut()}
+              className="absolute top-4 right-4 text-sm py-1 px-2"
+              variant="outline"
+            >
+              Sign out
             </Button>
           )}
           {message && (
@@ -368,5 +438,15 @@ const TopTracksContent: React.FC<{ tracks: TopTrack[] }> = ({ tracks }) => {
     </div>
   );
 };
+
+// In your API route
+async function fetchMatchup(id) {
+  // Optimize your database query
+  const matchup = await openDb.matchups.findUnique({
+    where: { id },
+    select: { /* only select necessary fields */ }
+  });
+  return matchup;
+}
 
 export default SongsWrapper;

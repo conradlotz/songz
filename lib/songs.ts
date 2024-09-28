@@ -25,21 +25,22 @@ export const getSongMatchup = async (encodedUserId: string): Promise<{ song1: an
 
 export const getSongs = async (): Promise<any[]> => {
   try {
-    const cachedSongs = cache.get<any[]>('songs');
-    if (cachedSongs) {
-      console.log(cachedSongs.length);
-      return cachedSongs;
-    }
     const database = await openDb();
-    const songs = await database.all('SELECT * FROM songs');
-    cache.set('songs', songs);
-    console.log(songs.length);
-    return songs;
+    const allSongs = await database.all('SELECT *, "Artist Name" as artist_name FROM songs');
+    const randomSongs = getRandomSample(allSongs, 100);
+    console.log(randomSongs.length);
+    return randomSongs;
   } catch (error) {
     console.error('Error in getSongs:', error);
     throw error;
   }
 };
+
+// Helper function to get a random sample of n items from an array
+function getRandomSample<T>(array: T[], n: number): T[] {
+  const shuffled = array.sort(() => 0.5 - Math.random());
+  return shuffled.slice(0, n);
+}
 
 const matchups = new Set<string>();
 let lastIndex = 0;
