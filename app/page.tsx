@@ -110,7 +110,7 @@ const Songs = () => {
   }, [songsData]);
 
   useEffect(() => {
-    if (topTracksData) {
+    if (topTracksData && Array.isArray(topTracksData)) {
       setTopTracks(topTracksData.map((track) => ({
         id: track['Track URI'],
         trackName: track['Track Name'],
@@ -118,6 +118,8 @@ const Songs = () => {
         artistName: track['Artist Name'] as string,
         rating: (track as any).rating
       })));
+    } else {
+      console.error('topTracksData is not an array:', topTracksData);
     }
   }, [topTracksData]);
 
