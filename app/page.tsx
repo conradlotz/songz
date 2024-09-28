@@ -9,6 +9,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import Image from 'next/image';
 
 interface Song {
   id: string;
@@ -39,21 +40,25 @@ interface SpotifyTrack {
 
 let USER_ID = '';
 
-const PLACEHOLDER_IMAGE = '/images/placeholder.webp'; // Adjust the path as needed
+const PLACEHOLDER_IMAGE = '/image/placeholder.webp'; // Adjust the path if needed
 
 const Songs = () => {
   const [songs, setSongs] = useState<{ song1: Song; song2: Song } | null>(null);
   const [message, setMessage] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [topTracks, setTopTracks] = useState<TopTrack[]>([]);
+  const [activeTab, setActiveTab] = useState<string>("match");
 
   useEffect(() => {
     const cookies = parseCookies();
     if (cookies.cookie_authenticated === 'true') {
       USER_ID = cookies.cookie_user_encrypt_id;
       setIsAuthenticated(true);
+      setActiveTab("match"); // Set the active tab to "match" when authenticated
       fetchSongs();
       fetchTopTracks();
+    } else {
+      setActiveTab("signin"); // Set the active tab to "signin" when not authenticated
     }
   }, []);
 
@@ -71,14 +76,19 @@ const Songs = () => {
   const fetchTopTracks = async () => {
     try {
       const response = await axios.get<SpotifyTrack[]>('/api/top-tracks');
-      setTopTracks(response.data.map((track) => ({
-        id: track['Track URI'],
-        trackName: track['Track Name'],
-        albumImageUrl: track['Album Image URL'],
-        artistName: track['Artist Name'] as string,
-        rating: (track as any).rating // Type assertion
-      })));
+      console.log('API response:', response.data); // Log the entire response
+      setTopTracks(response.data.map((track) => {
+        console.log('Processing track:', track); // Log each track
+        return {
+          id: track['Track URI'],
+          trackName: track['Track Name'],
+          albumImageUrl: track['Album Image URL'],
+          artistName: track['Artist Name'] as string,
+          rating: (track as any).rating // Type assertion
+        };
+      }));
     } catch (error) {
+      console.error('Error fetching top tracks:', error);
       setMessage('Failed to fetch top tracks.');
     }
   };
@@ -142,7 +152,7 @@ const Songs = () => {
           <CardTitle className="text-2xl font-bold text-center">Song Selection</CardTitle>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue={isAuthenticated ? "match" : "signin"} className="h-full space-y-6">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full space-y-6">
             <div className="space-between flex items-center">
               <TabsList>
                 {isAuthenticated ? (
@@ -315,15 +325,12 @@ const TopTracksContent: React.FC<{ tracks: TopTrack[] }> = ({ tracks }) => {
           {tracks.map((track) => (
             <div key={track.id} className="flex flex-col items-center">
               <div className="relative overflow-hidden rounded-lg shadow-lg transition-transform duration-300 ease-in-out hover:scale-105">
-                <img
-                  src={track.albumImageUrl || PLACEHOLDER_IMAGE}
+                <Image
+                  src={track.albumImageUrl && track.albumImageUrl !== '' ? track.albumImageUrl : PLACEHOLDER_IMAGE}
                   alt={track.trackName || 'Unknown Track'}
+                  width={200}
+                  height={200}
                   className="w-full h-auto object-cover"
-                  onError={(e) => {
-                    const target = e.target as HTMLImageElement;
-                    target.onerror = null; // Prevent infinite loop
-                    target.src = PLACEHOLDER_IMAGE;
-                  }}
                 />
                 <div className="absolute inset-0 bg-black bg-opacity-40 flex items-end p-2">
                   <p className="text-white text-xs font-semibold">Rating: {track.rating.toFixed(2)}</p>

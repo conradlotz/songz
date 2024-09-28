@@ -33,6 +33,7 @@ export const getSongs = async (): Promise<any[]> => {
     const database = await openDb();
     const songs = await database.all('SELECT * FROM songs');
     cache.set('songs', songs);
+    console.log(songs.length);
     return songs;
   } catch (error) {
     console.error('Error in getSongs:', error);
