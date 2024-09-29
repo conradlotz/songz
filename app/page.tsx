@@ -214,10 +214,19 @@ const Songs = () => {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen p-4">
+    <div className="flex items-start justify-center min-h-screen p-4 pt-8 sm:pt-16">
       <Card className="w-full max-w-4xl">
-        <CardHeader>
-          <CardTitle className="text-2xl font-bold text-center">Song Selection</CardTitle>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle className="text-2xl font-bold">Song Selection</CardTitle>
+          {isAuthenticated && (
+            <Button
+              onClick={() => signOut()}
+              className="text-sm py-1 px-2"
+              variant="outline"
+            >
+              Sign out
+            </Button>
+          )}
         </CardHeader>
         <CardContent>
           <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full space-y-6">
@@ -239,11 +248,7 @@ const Songs = () => {
             {isAuthenticated ? (
               <>
                 <TabsContent value="match" className="border-none p-0 outline-none">
-                  {isLoading ? (
-                    <div className="flex justify-center items-center h-64">
-                      <Loader2 className="h-8 w-8 animate-spin" />
-                    </div>
-                  ) : isSongsLoading ? (
+                  {isLoading || isSongsLoading ? (
                     <div className="flex justify-center items-center h-64">
                       <Loader2 className="h-8 w-8 animate-spin" />
                     </div>
@@ -266,10 +271,10 @@ const Songs = () => {
                               />
                               <div className="absolute inset-0 bg-black bg-opacity-40 flex items-end p-2">
                                 <div>
-                                  <h3 className="text-white text-lg font-bold truncate">
-                                    {song.track_name} - {song.artist_name}
+                                  <h3 className="text-white text-lg sm:text-base font-bold truncate">
+                                    {song.track_name}
                                   </h3>
-                                  <p className="text-white text-xs truncate">{song.artist_name}</p>
+                                  <p className="text-white text-sm sm:text-xs truncate">{song.artist_name}</p>
                                 </div>
                               </div>
                             </div>
@@ -307,15 +312,6 @@ const Songs = () => {
               </>
             )}
           </Tabs>
-          {isAuthenticated && (
-            <Button
-              onClick={() => signOut()}
-              className="absolute top-4 right-4 text-sm py-1 px-2"
-              variant="outline"
-            >
-              Sign out
-            </Button>
-          )}
           {message && (
             <Alert variant="destructive" className="mt-4">
               <AlertDescription>{message}</AlertDescription>
