@@ -168,7 +168,6 @@ export const getTopTracks = async (encodedUserId: string): Promise<any[]> => {
         SELECT song2_uri FROM user_matches WHERE user_id = $1
       )
       ORDER BY r.rating DESC
-      LIMIT 100
     `, [userId]);
 
     return topTracks;
