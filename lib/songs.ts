@@ -31,7 +31,7 @@ export const getSongs = async (): Promise<any[]> => {
       console.log(cachedSongs.length);
       return cachedSongs;
     }
-    const { rows: songs } = await query('SELECT * FROM songs LIMIT 100', []);
+    const { rows: songs } = await query('SELECT * FROM songs ORDER BY RANDOM() LIMIT 100;', []);
     cache.set('songs', songs);
     console.log(songs.length);
     return songs;
@@ -168,6 +168,7 @@ export const getTopTracks = async (encodedUserId: string): Promise<any[]> => {
         SELECT song2_uri FROM user_matches WHERE user_id = $1
       )
       ORDER BY r.rating DESC
+      LIMIT 100
     `, [userId]);
 
     return topTracks;
