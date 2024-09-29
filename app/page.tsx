@@ -271,7 +271,7 @@ const Songs = () => {
                               />
                               <div className="absolute inset-0 bg-black bg-opacity-40 flex items-end p-2">
                                 <div>
-                                  <p className="text-white text-lg sm:text-base font-bold truncate">
+                                  <p className="text-white text-sm sm:text-base font-bold truncate">
                                     {song.track_name}
                                   </p>
                                   <p className="text-white text-sm sm:text-xs truncate">{song.artist_name}</p>
