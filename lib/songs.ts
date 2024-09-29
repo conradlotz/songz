@@ -1,18 +1,19 @@
 import NodeCache from 'node-cache';
-import { openDb } from './db';
+import { query, initializePool } from './db';
 import { decrypt } from './encryption';
 
 const cache = new NodeCache({ stdTTL: 3600 }); // Cache for 1 hour
 
+// Initialize the database pool
+initializePool();
+
 export const getSongMatchup = async (encodedUserId: string): Promise<{ song1: any; song2: any } | null> => {
   try {
-    const database = await openDb();
     const songs = await getSongs();
     const userId = parseInt(decrypt(encodedUserId), 10);
-    const [song1, song2] = await getRandomSongs(database, songs, userId);
+    const [song1, song2] = await getRandomSongs(songs, userId);
     
     if (song1 && song2) {
-      // console.log(song1, song2);
       return { song1, song2 };
     } else {
       return null;
@@ -30,8 +31,7 @@ export const getSongs = async (): Promise<any[]> => {
       console.log(cachedSongs.length);
       return cachedSongs;
     }
-    const database = await openDb();
-    const songs = await database.all('SELECT * FROM songs LIMIT 100');
+    const { rows: songs } = await query('SELECT * FROM songs LIMIT 100', []);
     cache.set('songs', songs);
     console.log(songs.length);
     return songs;
@@ -53,57 +53,69 @@ const calculateElo = (rating1: number, rating2: number, score: number): number =
 
 export const updateEloRatings = async (encodedUserId: string, winnerId: string, loserId: string): Promise<void> => {
   try {
-    const database = await openDb();
-    
+    console.log('Updating Elo ratings for winner:', winnerId, 'and loser:', loserId);
+    console.log('Encoded User ID:', encodedUserId);
+
+    if (!winnerId || !loserId) {
+      console.error('Missing winner or loser ID:', { winnerId, loserId });
+      throw new Error('Winner ID and Loser ID must be provided');
+    }
+
     // Fetch current Elo ratings
-    const winnerData = await database.get('SELECT rating FROM ratings WHERE song_uri = ?', winnerId);
-    const loserData = await database.get('SELECT rating FROM ratings WHERE song_uri = ?', loserId);
-    
+    const { rows: [winnerData] } = await query('SELECT rating FROM ratings WHERE song_uri = $1', [winnerId]);
+    const { rows: [loserData] } = await query('SELECT rating FROM ratings WHERE song_uri = $1', [loserId]);
+  
     const winnerCurrentRating = winnerData ? winnerData.rating : 1500;
     const loserCurrentRating = loserData ? loserData.rating : 1500;
+
+    console.log('Current ratings:', { winnerCurrentRating, loserCurrentRating });
 
     const winnerNewRating = calculateElo(winnerCurrentRating, loserCurrentRating, 1);
     const loserNewRating = calculateElo(loserCurrentRating, winnerCurrentRating, 0);
 
-    console.log(winnerNewRating, loserNewRating);
+    console.log('New ratings:', { winnerNewRating, loserNewRating });
 
-    // Insert or update winner rating
-    if (!winnerData) {
-      await database.run('INSERT INTO ratings (song_uri, rating) VALUES (?, ?)', winnerId, winnerNewRating);
+    // Update or insert winner rating
+    if (winnerData) {
+      await query('UPDATE ratings SET rating = $1 WHERE song_uri = $2', [winnerNewRating, winnerId]);
     } else {
-      await database.run('UPDATE ratings SET rating = ? WHERE song_uri = ?', winnerNewRating, winnerId);
+      await query('INSERT INTO ratings (song_uri, rating) VALUES ($1, $2)', [winnerId, winnerNewRating]);
     }
 
-    // Insert or update loser rating
-    if (!loserData) {
-      await database.run('INSERT INTO ratings (song_uri, rating) VALUES (?, ?)', loserId, loserNewRating);
+    // Update or insert loser rating
+    if (loserData) {
+      await query('UPDATE ratings SET rating = $1 WHERE song_uri = $2', [loserNewRating, loserId]);
     } else {
-      await database.run('UPDATE ratings SET rating = ? WHERE song_uri = ?', loserNewRating, loserId);
+      await query('INSERT INTO ratings (song_uri, rating) VALUES ($1, $2)', [loserId, loserNewRating]);
     }
 
     // Update the cache
     const songs = await getSongs();
-    const winner = songs.find((song) => song['Track URI'] === winnerId);
-    const loser = songs.find((song) => song['Track URI'] === loserId);
+    const winner = songs.find((song) => song.track_uri === winnerId);
+    const loser = songs.find((song) => song.track_uri === loserId);
     if (winner && loser) {
       winner.rating = winnerNewRating;
       loser.rating = loserNewRating;
       cache.set('songs', songs);
+    } else {
+      console.error('Could not find winner or loser in songs cache:', { winnerId, loserId });
     }
 
     const userId = parseInt(decrypt(encodedUserId), 10);
-    await database.run('INSERT INTO user_matches (user_id, song1_uri, song2_uri) VALUES (?, ?, ?)', userId, winnerId, loserId);
+    await query('INSERT INTO user_matches (user_id, song1_uri, song2_uri) VALUES ($1, $2, $3)', [userId, winnerId, loserId]);
+    
+    console.log('Successfully updated Elo ratings and inserted user match');
   } catch (error) {
     console.error('Error in updateEloRatings:', error);
     throw error;
   }
 };
 
-async function getRandomSongs(database: any, songs: any[], userId: number): Promise<[any | null, any | null]> {
+async function getRandomSongs(songs: any[], userId: number): Promise<[any | null, any | null]> {
     try {
         // Fetch matched pairs from the database
-        const matchedPairsRows = await database.all(
-            'SELECT song1_uri, song2_uri FROM user_matches WHERE user_id = ?',
+        const { rows: matchedPairsRows } = await query(
+            'SELECT song1_uri, song2_uri FROM user_matches WHERE user_id = $1',
             [userId]
         );
         const matchedPairs = new Set(matchedPairsRows.map((row: any) => [row.song1_uri, row.song2_uri].sort().join(',')));
@@ -112,7 +124,7 @@ async function getRandomSongs(database: any, songs: any[], userId: number): Prom
         const allCombinations = [];
         for (let i = 0; i < songs.length; i++) {
             for (let j = i + 1; j < songs.length; j++) {
-                allCombinations.push([songs[i]['Track URI'], songs[j]['Track URI']].sort().join(','));
+                allCombinations.push([songs[i]['track_uri'], songs[j]['track_uri']].sort().join(','));
             }
         }
 
@@ -127,8 +139,13 @@ async function getRandomSongs(database: any, songs: any[], userId: number): Prom
         const chosenPair = availableCombinations[Math.floor(Math.random() * availableCombinations.length)].split(',');
 
         // Find the corresponding song objects
-        const song1 = songs.find(song => song['Track URI'] === chosenPair[0]) || null;
-        const song2 = songs.find(song => song['Track URI'] === chosenPair[1]) || null;
+        const song1 = songs.find(song => song.track_uri === chosenPair[0]) || null;
+        const song2 = songs.find(song => song.track_uri === chosenPair[1]) || null;
+
+        if (!song1?.track_uri || !song2?.track_uri) {
+            console.error('Invalid song data:', { song1, song2 });
+            return [null, null];
+        }
 
         return [song1, song2];
     } catch (error) {
@@ -139,21 +156,20 @@ async function getRandomSongs(database: any, songs: any[], userId: number): Prom
 
 export const getTopTracks = async (encodedUserId: string): Promise<any[]> => {
   try {
-    const database = await openDb();
     const userId = parseInt(decrypt(encodedUserId), 10);
     
-    const topTracks = await database.all(`
+    const { rows: topTracks } = await query(`
       SELECT s.*, r.rating
       FROM songs s
-      JOIN ratings r ON s."Track URI" = r.song_uri
+      JOIN ratings r ON s.track_uri = r.song_uri
       WHERE r.song_uri IN (
-        SELECT song1_uri FROM user_matches WHERE user_id = ?
+        SELECT song1_uri FROM user_matches WHERE user_id = $1
         UNION
-        SELECT song2_uri FROM user_matches WHERE user_id = ?
+        SELECT song2_uri FROM user_matches WHERE user_id = $1
       )
       ORDER BY r.rating DESC
       LIMIT 100
-    `, [userId, userId]);
+    `, [userId]);
 
     return topTracks;
   } catch (error) {

@@ -35,11 +35,11 @@ interface TopTrack {
 }
 
 interface SpotifyTrack {
-  'Track URI': string;
-  'Track Name': string;
-  'Album Image URL': string;
+  track_uri: string;
+  track_name: string;
+  album_image_url: string;
   rating?: number; // or whatever type 'rating' is supposed to be
-  'Artist Name': string;
+  artist_name: string;
   // Add other properties as needed
 }
 
@@ -112,10 +112,10 @@ const Songs = () => {
   useEffect(() => {
     if (topTracksData && Array.isArray(topTracksData)) {
       setTopTracks(topTracksData.map((track) => ({
-        id: track['Track URI'],
-        trackName: track['Track Name'],
-        albumImageUrl: track['Album Image URL'],
-        artistName: track['Artist Name'] as string,
+        id: track.track_uri,
+        trackName: track.track_name,
+        albumImageUrl: track.album_image_url,
+        artistName: track.artist_name,
         rating: (track as any).rating
       })));
     } else {
@@ -255,21 +255,21 @@ const Songs = () => {
                             <div 
                               className="relative overflow-hidden rounded-lg shadow-lg transition-transform duration-300 ease-in-out hover:scale-105 cursor-pointer"
                               onClick={() => handleSelectSong(
-                                (song['Track URI'] as string) ?? '',
-                                (songs[index === 0 ? 'song2' : 'song1']['Track URI'] as string) ?? ''
+                                (song.track_uri as string) ?? '',
+                                (songs[index === 0 ? 'song2' : 'song1']['track_uri'] as string) ?? ''
                               )}
                             >
                               <img 
-                                src={song["Album Image URL"] || PLACEHOLDER_IMAGE} 
-                                alt={song["Track Name"] || 'Unknown Track'} 
+                                src={song.album_image_url || PLACEHOLDER_IMAGE} 
+                                alt={song.track_name || 'Unknown Track'} 
                                 className="w-full h-auto object-cover aspect-square" 
                               />
                               <div className="absolute inset-0 bg-black bg-opacity-40 flex items-end p-2">
                                 <div>
                                   <h3 className="text-white text-lg font-bold truncate">
-                                    {song["Track Name"]} - {song["Artist Name(s)"]}
+                                    {song.track_name} - {song.artist_name}
                                   </h3>
-                                  <p className="text-white text-xs truncate">{song.artist}</p>
+                                  <p className="text-white text-xs truncate">{song.artist_name}</p>
                                 </div>
                               </div>
                             </div>
