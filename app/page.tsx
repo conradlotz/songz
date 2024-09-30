@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from 'react';
-import axios, { AxiosResponse } from 'axios';
+import axios from 'axios';
 import { parseCookies, destroyCookie } from 'nookies';
 import { useQuery, useQueryClient, QueryClient, QueryClientProvider } from 'react-query';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -49,6 +49,11 @@ interface Matchup {
   // ... other properties of currentMatchup
 }
 
+interface Leaderboard {
+  name: string;
+  selections: number;
+}
+
 let USER_ID = '';
 
 const PLACEHOLDER_IMAGE = '/image/placeholder.webp'; // Adjust the path if needed
@@ -86,11 +91,11 @@ const Songs = () => {
     { enabled: isAuthenticated }
   );
 
-  const { data: currentMatchup, refetch } = useQuery(
-    ['matchup', currentMatchupId],
-    () => axios.get(`/api/matchup/${currentMatchupId}`).then(res => res.data),
-    { enabled: !!currentMatchupId, onSettled: () => setIsLoading(false) }
-  );
+  // const { data: currentMatchup, refetch } = useQuery(
+  //   ['matchup', currentMatchupId],
+  //   () => axios.get(`/api/matchup/${currentMatchupId}`).then(res => res.data),
+  //   { enabled: !!currentMatchupId, onSettled: () => setIsLoading(false) }
+  // );
 
   const { data: overallTopTracksData, isLoading: isOverallTopTracksLoading } = useQuery(
     'overallTopTracks',
@@ -100,7 +105,7 @@ const Songs = () => {
 
   const { data: userLeaderboardData, isLoading: isUserLeaderboardLoading } = useQuery(
     'userLeaderboard',
-    () => axios.get<AxiosResponse<{ name: string; selections: number }[]>>('/api/user-leaderboard').then(res => res.data),
+    () => axios.get<{ name: string; selections: number }[]>('/api/user-leaderboard').then(res => res.data),
     { enabled: isAuthenticated }
   );
 
@@ -169,7 +174,7 @@ const Songs = () => {
         winnerId,
         loserId,
       });
-      refetchSongs();
+      // refetch();
     } catch (error) {
       setMessage('Failed to update match.');
     }
@@ -187,7 +192,7 @@ const Songs = () => {
       if (response.data && typeof response.data === 'object' && 'success' in response.data) {
         if (response.data.success) {
           setIsAuthenticated(true);
-          refetchSongs();
+          // refetch();
         } else {
           setMessage('Sign in failed. Please try again.');
         }
@@ -205,7 +210,7 @@ const Songs = () => {
       if ((response.data as { success: boolean }).success) {
         setMessage('Sign up successful. Please sign in.');
         setIsAuthenticated(true);
-        refetchSongs();
+        // refetch();
       } else {
         setMessage('Sign up failed. Please try again.');
       }
@@ -248,17 +253,18 @@ const Songs = () => {
   // Define refetchSongs
   const refetchSongs = async () => {
     try {
-      const response = await fetch('/api/songs');
+      const response = await fetch('/api/song-match');
       if (!response.ok) {
         throw new Error('Failed to fetch songs');
       }
       const songs = await response.json();
       // Update state or perform any other necessary actions with the fetched songs
-      console.log(songs);
     } catch (error) {
       console.error('Error fetching songs:', error);
     }
   };
+
+  const queryClient = useQueryClient();
 
   return (
     <div className="flex items-start justify-center min-h-screen p-4 pt-8 sm:pt-16">
@@ -308,10 +314,13 @@ const Songs = () => {
                           <div key={index} className="flex-1 min-w-[45%]">
                             <div 
                               className="relative overflow-hidden rounded-lg shadow-lg transition-transform duration-300 ease-in-out hover:scale-105 cursor-pointer"
-                              onClick={() => handleSelectSong(
-                                (song.track_uri as string) ?? '',
-                                (songs[index === 0 ? 'song2' : 'song1']['track_uri'] as string) ?? ''
-                              )}
+                              onClick={async () => {
+                                await handleSelectSong(
+                                  (song.track_uri as string) ?? '',
+                                  (songs[index === 0 ? 'song2' : 'song1']['track_uri'] as string) ?? ''
+                                );
+                                queryClient.invalidateQueries('songs');
+                              }}
                             >
                               <img 
                                 src={song.album_image_url || PLACEHOLDER_IMAGE} 
@@ -437,7 +446,7 @@ const SignUp: React.FC<SignUpProps> = ({ onSignUp, message }) => {
         const data = await response.json();
         if (data.success) {
           // Automatically sign in after successful signup
-          setIsAuthenticated(true);
+          // setIsAuthenticated(true);
         } else {
           throw new Error('Signup failed');
         }
