@@ -281,7 +281,7 @@ const Songs = () => {
           <CardTitle className="text-2xl font-bold">Song Selection</CardTitle>
           {isAuthenticated && (
             <Button
-              onClick={() => signOut()}
+              onClick={() => handleSignOut()}
               className="text-sm py-1 px-2"
               variant="outline"
             >
