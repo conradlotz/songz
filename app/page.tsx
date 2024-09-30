@@ -22,6 +22,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import SpotifyPlayer from '@/components/SpotifyPlayer';
+import BeatBattleIcon from '@/components/BeatBattleIcon'; // Adjust the import path as necessary
 // import { db } from '@/lib/db'; // Assume this is your database connection?
 
 // Remove the following line if not needed:
@@ -278,7 +279,10 @@ const Songs = () => {
     <div className="flex items-start justify-center min-h-screen p-4 pt-8 sm:pt-16">
       <Card className="w-full max-w-4xl">
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-2xl font-bold">Song Selection</CardTitle>
+          <CardTitle className="text-2xl font-bold flex items-center">
+            <BeatBattleIcon className="mr-2 w-6 h-6" />
+            Beat Battle
+          </CardTitle>
           {isAuthenticated && (
             <Button
               onClick={() => handleSignOut()}
@@ -526,31 +530,33 @@ const TopTracksContent: React.FC<{ tracks: TopTrack[] }> = ({ tracks }) => {
   return (
     <div className="space-y-4">
       <h2 className="text-2xl font-semibold tracking-tight">Top 100 Tracks</h2>
-      <ScrollArea className="h-[600px]">
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {tracks.map((track) => (
-            <div key={track.id} className="flex flex-col items-center">
-              <div className="relative overflow-hidden rounded-lg shadow-lg transition-transform duration-300 ease-in-out hover:scale-105">
-                <Image
-                  src={track.albumImageUrl && track.albumImageUrl !== '' ? track.albumImageUrl : PLACEHOLDER_IMAGE}
-                  alt={track.trackName || 'Unknown Track'}
-                  width={200}
-                  height={200}
-                  className="w-full h-auto object-cover"
-                />
-                <div className="absolute inset-0 bg-black bg-opacity-40 flex items-end p-2">
-                  <p className="text-white text-xs font-semibold">Rating: {track.rating.toFixed(2)}</p>
+      <div className="relative h-[600px]">
+        <ScrollArea className="h-full absolute inset-0">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 pr-4 pb-4">
+            {tracks.map((track) => (
+              <div key={track.id} className="flex flex-col items-center">
+                <div className="relative overflow-hidden rounded-lg shadow-lg transition-transform duration-300 ease-in-out hover:scale-105">
+                  <Image
+                    src={track.albumImageUrl && track.albumImageUrl !== '' ? track.albumImageUrl : PLACEHOLDER_IMAGE}
+                    alt={track.trackName || 'Unknown Track'}
+                    width={200}
+                    height={200}
+                    className="w-full h-auto object-cover"
+                  />
+                  <div className="absolute inset-0 bg-black bg-opacity-40 flex items-end p-2">
+                    <p className="text-white text-xs font-semibold">Rating: {track.rating.toFixed(2)}</p>
+                  </div>
+                </div>
+                <div className="mt-2 text-center">
+                  <p className="text-xs font-medium">{track.trackName}</p>
+                  <p className="text-xs text-gray-500">{track.artistName}</p>
                 </div>
               </div>
-              <div className="mt-2 text-center">
-                <p className="text-xs font-medium">{track.trackName}</p>
-                <p className="text-xs text-gray-500">{track.artistName}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-        <ScrollBar orientation="vertical" />
-      </ScrollArea>
+            ))}
+          </div>
+          <ScrollBar orientation="vertical" />
+        </ScrollArea>
+      </div>
     </div>
   );
 };
@@ -563,31 +569,33 @@ const OverallTopTracksContent: React.FC<{ tracks: TopTrack[]; isLoading: boolean
   return (
     <div className="space-y-4">
       <h2 className="text-2xl font-semibold tracking-tight">Overall Top 100 Tracks</h2>
-      <ScrollArea className="h-[600px]">
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {tracks.map((track) => (
-            <div key={track.id} className="flex flex-col items-center">
-              <div className="relative overflow-hidden rounded-lg shadow-lg transition-transform duration-300 ease-in-out hover:scale-105">
-                <Image
-                  src={track.albumImageUrl && track.albumImageUrl !== '' ? track.albumImageUrl : PLACEHOLDER_IMAGE}
-                  alt={track.trackName || 'Unknown Track'}
-                  width={200}
-                  height={200}
-                  className="w-full h-auto object-cover"
-                />
-                <div className="absolute inset-0 bg-black bg-opacity-40 flex items-end p-2">
-                  <p className="text-white text-xs font-semibold">Rating: {track.rating.toFixed(2)}</p>
+      <div className="relative h-[600px]">
+        <ScrollArea className="h-full absolute inset-0">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 pr-4 pb-4">
+            {tracks.map((track) => (
+              <div key={track.id} className="flex flex-col items-center">
+                <div className="relative overflow-hidden rounded-lg shadow-lg transition-transform duration-300 ease-in-out hover:scale-105">
+                  <Image
+                    src={track.albumImageUrl && track.albumImageUrl !== '' ? track.albumImageUrl : PLACEHOLDER_IMAGE}
+                    alt={track.trackName || 'Unknown Track'}
+                    width={200}
+                    height={200}
+                    className="w-full h-auto object-cover"
+                  />
+                  <div className="absolute inset-0 bg-black bg-opacity-40 flex items-end p-2">
+                    <p className="text-white text-xs font-semibold">Rating: {track.rating.toFixed(2)}</p>
+                  </div>
+                </div>
+                <div className="mt-2 text-center">
+                  <p className="text-xs font-medium">{track.trackName}</p>
+                  <p className="text-xs text-gray-500">{track.artistName}</p>
                 </div>
               </div>
-              <div className="mt-2 text-center">
-                <p className="text-xs font-medium">{track.trackName}</p>
-                <p className="text-xs text-gray-500">{track.artistName}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-        <ScrollBar orientation="vertical" />
-      </ScrollArea>
+            ))}
+          </div>
+          <ScrollBar orientation="vertical" />
+        </ScrollArea>
+      </div>
     </div>
   );
 };
