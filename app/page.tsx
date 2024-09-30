@@ -105,7 +105,7 @@ const Songs = () => {
 
   const { data: userLeaderboardData, isLoading: isUserLeaderboardLoading } = useQuery(
     'userLeaderboard',
-    () => axios.get<{ name: string; selections: number }[]>('/api/user-leaderboard').then(res => res.data),
+    () => axios.get<Leaderboard[]>('/api/user-leaderboard').then(res => res.data) as Promise<Leaderboard[]>,
     { enabled: isAuthenticated }
   );
 
