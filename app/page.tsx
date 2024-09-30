@@ -21,6 +21,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import SpotifyPlayer from '@/components/SpotifyPlayer';
 // import { db } from '@/lib/db'; // Assume this is your database connection?
 
 // Remove the following line if not needed:
@@ -343,7 +344,7 @@ const Songs = () => {
                     <div className="space-y-4">
                       <div className="flex flex-row justify-between gap-4">
                         {[songs.song1, songs.song2].map((song, index) => (
-                          <div key={index} className="flex-1 min-w-[45%]">
+                          <div key={index} className="flex-1 min-w-[45%] flex flex-col">
                             <div 
                               className="relative overflow-hidden rounded-lg shadow-lg transition-transform duration-300 ease-in-out hover:scale-105 cursor-pointer"
                               onClick={async () => {
@@ -354,7 +355,7 @@ const Songs = () => {
                                 queryClient.invalidateQueries('songs');
                               }}
                             >
-                              <img 
+                              <img
                                 src={song.album_image_url || PLACEHOLDER_IMAGE} 
                                 alt={song.track_name || 'Unknown Track'} 
                                 className="w-full h-auto object-cover aspect-square" 
@@ -368,6 +369,7 @@ const Songs = () => {
                                 </div>
                               </div>
                             </div>
+                            <SpotifyPlayer uri={`spotify:track:${song.track_uri}`} />
                           </div>
                         ))}
                       </div>

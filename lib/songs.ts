@@ -12,7 +12,7 @@ export const getSongMatchup = async (encodedUserId: string): Promise<{ song1: an
     const songs = await getSongs();
     const userId = parseInt(decrypt(encodedUserId), 10);
     const [song1, song2] = await getRandomSongs(songs, userId);
-    
+
     if (song1 && song2) {
       return { song1, song2 };
     } else {
@@ -64,7 +64,7 @@ export const updateEloRatings = async (encodedUserId: string, winnerId: string, 
     // Fetch current Elo ratings
     const { rows: [winnerData] } = await query('SELECT rating FROM ratings WHERE song_uri = $1', [winnerId]);
     const { rows: [loserData] } = await query('SELECT rating FROM ratings WHERE song_uri = $1', [loserId]);
-  
+
     const winnerCurrentRating = winnerData ? winnerData.rating : 1500;
     const loserCurrentRating = loserData ? loserData.rating : 1500;
 
@@ -103,7 +103,7 @@ export const updateEloRatings = async (encodedUserId: string, winnerId: string, 
 
     const userId = parseInt(decrypt(encodedUserId), 10);
     await query('INSERT INTO user_matches (user_id, song1_uri, song2_uri) VALUES ($1, $2, $3)', [userId, winnerId, loserId]);
-    
+
     console.log('Successfully updated Elo ratings and inserted user match');
   } catch (error) {
     console.error('Error in updateEloRatings:', error);
@@ -157,7 +157,7 @@ async function getRandomSongs(songs: any[], userId: number): Promise<[any | null
 export const getTopTracks = async (encodedUserId: string): Promise<any[]> => {
   try {
     const userId = parseInt(decrypt(encodedUserId), 10);
-    
+
     const { rows: topTracks } = await query(`
       SELECT s.*, r.rating
       FROM songs s
