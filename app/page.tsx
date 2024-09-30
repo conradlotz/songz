@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import axios, { AxiosResponse } from 'axios';
 import { parseCookies, destroyCookie } from 'nookies';
 import { useQuery, useQueryClient, QueryClient, QueryClientProvider } from 'react-query';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,6 +13,7 @@ import { Separator } from "@/components/ui/separator";
 import Image from 'next/image';
 import { Loader2 } from 'lucide-react';
 import { signOut } from "next-auth/react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 // import { db } from '@/lib/db'; // Assume this is your database connection?
 
 // Remove the following line if not needed:
@@ -70,9 +71,10 @@ const Songs = () => {
   const [activeTab, setActiveTab] = useState<string>("match");
   const [currentMatchupId, setCurrentMatchupId] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const queryClient = useQueryClient();
+  const [overallTopTracks, setOverallTopTracks] = useState<TopTrack[]>([]);
+  const [userLeaderboard, setUserLeaderboard] = useState<{ name: string; selections: number }[]>([]);
 
-  const { data: songsData, isLoading: isSongsLoading, refetch: refetchSongs } = useQuery(
+  const { data: songsData, isLoading: isSongsLoading } = useQuery(
     ['songs', USER_ID],
     () => axios.get('/api/song-match', { params: { userId: USER_ID } }).then(res => res.data),
     { enabled: isAuthenticated }
@@ -88,6 +90,18 @@ const Songs = () => {
     ['matchup', currentMatchupId],
     () => axios.get(`/api/matchup/${currentMatchupId}`).then(res => res.data),
     { enabled: !!currentMatchupId, onSettled: () => setIsLoading(false) }
+  );
+
+  const { data: overallTopTracksData, isLoading: isOverallTopTracksLoading } = useQuery(
+    'overallTopTracks',
+    () => axios.get<SpotifyTrack[]>('/api/overall-top-tracks').then(res => res.data) as Promise<SpotifyTrack[]>,
+    { enabled: isAuthenticated }
+  );
+
+  const { data: userLeaderboardData, isLoading: isUserLeaderboardLoading } = useQuery(
+    'userLeaderboard',
+    () => axios.get<AxiosResponse<{ name: string; selections: number }[]>>('/api/user-leaderboard').then(res => res.data),
+    { enabled: isAuthenticated }
   );
 
   useEffect(() => {
@@ -122,6 +136,24 @@ const Songs = () => {
       console.error('topTracksData is not an array:', topTracksData);
     }
   }, [topTracksData]);
+
+  useEffect(() => {
+    if (overallTopTracksData && Array.isArray(overallTopTracksData)) {
+      setOverallTopTracks(overallTopTracksData.map((track) => ({
+        id: track.track_uri,
+        trackName: track.track_name,
+        albumImageUrl: track.album_image_url,
+        artistName: track.artist_name,
+        rating: (track as any).rating
+      })));
+    }
+  }, [overallTopTracksData]);
+
+  useEffect(() => {
+    if (userLeaderboardData && Array.isArray(userLeaderboardData)) {
+      setUserLeaderboard(userLeaderboardData);
+    }
+  }, [userLeaderboardData]);
 
   // useEffect(() => {
   //   if (currentMatchup && typeof currentMatchup === 'object' && 'nextId' in currentMatchup) {
@@ -213,6 +245,21 @@ const Songs = () => {
     window.open(trackUrl, '_blank');
   };
 
+  // Define refetchSongs
+  const refetchSongs = async () => {
+    try {
+      const response = await fetch('/api/songs');
+      if (!response.ok) {
+        throw new Error('Failed to fetch songs');
+      }
+      const songs = await response.json();
+      // Update state or perform any other necessary actions with the fetched songs
+      console.log(songs);
+    } catch (error) {
+      console.error('Error fetching songs:', error);
+    }
+  };
+
   return (
     <div className="flex items-start justify-center min-h-screen p-4 pt-8 sm:pt-16">
       <Card className="w-full max-w-4xl">
@@ -235,7 +282,9 @@ const Songs = () => {
                 {isAuthenticated ? (
                   <>
                     <TabsTrigger value="match">Match</TabsTrigger>
-                    <TabsTrigger value="top100">Top 100</TabsTrigger>
+                    <TabsTrigger value="top100">Your Top 100</TabsTrigger>
+                    <TabsTrigger value="overallTop100">Overall Top 100</TabsTrigger>
+                    <TabsTrigger value="leaderboard">Leaderboard</TabsTrigger>
                   </>
                 ) : (
                   <>
@@ -299,6 +348,12 @@ const Songs = () => {
                   ) : (
                     <TopTracksContent tracks={topTracks} />
                   )}
+                </TabsContent>
+                <TabsContent value="overallTop100" className="border-none p-0 outline-none">
+                  <OverallTopTracksContent tracks={overallTopTracks} isLoading={isOverallTopTracksLoading} />
+                </TabsContent>
+                <TabsContent value="leaderboard" className="border-none p-0 outline-none">
+                  <LeaderboardContent leaderboard={userLeaderboard} isLoading={isUserLeaderboardLoading} />
                 </TabsContent>
               </>
             ) : (
@@ -366,6 +421,7 @@ interface SignUpProps {
 }
 
 const SignUp: React.FC<SignUpProps> = ({ onSignUp, message }) => {
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
@@ -375,10 +431,16 @@ const SignUp: React.FC<SignUpProps> = ({ onSignUp, message }) => {
       const response = await fetch('/api/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ name, email, password }),
       });
       if (response.ok) {
-        onSignUp(email, password);
+        const data = await response.json();
+        if (data.success) {
+          // Automatically sign in after successful signup
+          setIsAuthenticated(true);
+        } else {
+          throw new Error('Signup failed');
+        }
       } else {
         throw new Error('Signup failed');
       }
@@ -389,6 +451,13 @@ const SignUp: React.FC<SignUpProps> = ({ onSignUp, message }) => {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      <Input
+        type="text"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        placeholder="Full Name"
+        required
+      />
       <Input
         type="email"
         value={email}
@@ -439,6 +508,71 @@ const TopTracksContent: React.FC<{ tracks: TopTrack[] }> = ({ tracks }) => {
         </div>
         <ScrollBar orientation="vertical" />
       </ScrollArea>
+    </div>
+  );
+};
+
+const OverallTopTracksContent: React.FC<{ tracks: TopTrack[]; isLoading: boolean }> = ({ tracks, isLoading }) => {
+  if (isLoading) {
+    return <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>;
+  }
+
+  return (
+    <div className="space-y-4">
+      <h2 className="text-2xl font-semibold tracking-tight">Overall Top 100 Tracks</h2>
+      <ScrollArea className="h-[600px]">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          {tracks.map((track) => (
+            <div key={track.id} className="flex flex-col items-center">
+              <div className="relative overflow-hidden rounded-lg shadow-lg transition-transform duration-300 ease-in-out hover:scale-105">
+                <Image
+                  src={track.albumImageUrl && track.albumImageUrl !== '' ? track.albumImageUrl : PLACEHOLDER_IMAGE}
+                  alt={track.trackName || 'Unknown Track'}
+                  width={200}
+                  height={200}
+                  className="w-full h-auto object-cover"
+                />
+                <div className="absolute inset-0 bg-black bg-opacity-40 flex items-end p-2">
+                  <p className="text-white text-xs font-semibold">Rating: {track.rating.toFixed(2)}</p>
+                </div>
+              </div>
+              <div className="mt-2 text-center">
+                <p className="text-sm font-medium">{track.trackName}</p>
+                <p className="text-xs text-gray-500">{track.artistName}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+        <ScrollBar orientation="vertical" />
+      </ScrollArea>
+    </div>
+  );
+};
+
+const LeaderboardContent: React.FC<{ leaderboard: { name: string; selections: number }[]; isLoading: boolean }> = ({ leaderboard, isLoading }) => {
+  if (isLoading) {
+    return <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>;
+  }
+
+  return (
+    <div className="space-y-4">
+      <h2 className="text-2xl font-semibold tracking-tight">User Leaderboard</h2>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Name</TableHead>
+            <TableHead>Selections</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {leaderboard.map((user, index) => (
+            <TableRow key={index}>
+              <TableCell>{user.name}</TableCell>
+              <TableCell>{user.selections}</TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
     </div>
   );
 };
