@@ -14,6 +14,13 @@ import Image from 'next/image';
 import { Loader2 } from 'lucide-react';
 import { signOut } from "next-auth/react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { ChevronDown } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 // import { db } from '@/lib/db'; // Assume this is your database connection?
 
 // Remove the following line if not needed:
@@ -284,7 +291,7 @@ const Songs = () => {
         <CardContent>
           <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full space-y-6">
             <div className="space-between flex items-center">
-              <TabsList>
+              <TabsList className="hidden sm:flex">
                 {isAuthenticated ? (
                   <>
                     <TabsTrigger value="match">Match</TabsTrigger>
@@ -299,6 +306,31 @@ const Songs = () => {
                   </>
                 )}
               </TabsList>
+              <div className="sm:hidden w-full">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className="w-full justify-between">
+                      {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}
+                      <ChevronDown className="ml-2 h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-full">
+                    {isAuthenticated ? (
+                      <>
+                        <DropdownMenuItem onSelect={() => setActiveTab("match")}>Match</DropdownMenuItem>
+                        <DropdownMenuItem onSelect={() => setActiveTab("top100")}>Your Top 100</DropdownMenuItem>
+                        <DropdownMenuItem onSelect={() => setActiveTab("overallTop100")}>Overall Top 100</DropdownMenuItem>
+                        <DropdownMenuItem onSelect={() => setActiveTab("leaderboard")}>Leaderboard</DropdownMenuItem>
+                      </>
+                    ) : (
+                      <>
+                        <DropdownMenuItem onSelect={() => setActiveTab("signin")}>Sign In</DropdownMenuItem>
+                        <DropdownMenuItem onSelect={() => setActiveTab("signup")}>Sign Up</DropdownMenuItem>
+                      </>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
             </div>
             {isAuthenticated ? (
               <>
@@ -329,10 +361,10 @@ const Songs = () => {
                               />
                               <div className="absolute inset-0 bg-black bg-opacity-40 flex items-end p-2">
                                 <div>
-                                  <p className="text-white text-sm sm:text-base font-bold truncate">
+                                  <p className="text-white text-xs xs:text-base font-bold truncate">
                                     {song.track_name}
                                   </p>
-                                  <p className="text-white text-sm sm:text-xs truncate">{song.artist_name}</p>
+                                  <p className="text-white text-xs xs:text-xs truncate">{song.artist_name}</p>
                                 </div>
                               </div>
                             </div>
@@ -509,7 +541,7 @@ const TopTracksContent: React.FC<{ tracks: TopTrack[] }> = ({ tracks }) => {
                 </div>
               </div>
               <div className="mt-2 text-center">
-                <p className="text-sm font-medium">{track.trackName}</p>
+                <p className="text-xs font-medium">{track.trackName}</p>
                 <p className="text-xs text-gray-500">{track.artistName}</p>
               </div>
             </div>
@@ -546,7 +578,7 @@ const OverallTopTracksContent: React.FC<{ tracks: TopTrack[]; isLoading: boolean
                 </div>
               </div>
               <div className="mt-2 text-center">
-                <p className="text-sm font-medium">{track.trackName}</p>
+                <p className="text-xs font-medium">{track.trackName}</p>
                 <p className="text-xs text-gray-500">{track.artistName}</p>
               </div>
             </div>
