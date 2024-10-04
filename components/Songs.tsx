@@ -201,7 +201,7 @@ const Songs: React.FC<SongsProps> = ({ isAuthenticated: initialIsAuthenticated }
 
   return (
     <div className="flex items-start justify-center min-h-screen p-4 pt-8 sm:pt-16">
-      {showConfetti && <Confetti recycle={false} numberOfPieces={200} />}
+      {showConfetti && <Confetti recycle={false} numberOfPieces={50} />}
       <Card className="w-full max-w-4xl">
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-2xl font-bold flex items-center">
