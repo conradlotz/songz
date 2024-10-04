@@ -9,6 +9,7 @@ interface SignUpProps {
 }
 
 interface SignUpFormData {
+  name: string;
   email: string;
   password: string;
   confirmPassword: string;
@@ -33,7 +34,7 @@ const SignUp: React.FC<SignUpProps> = ({ onSignUp, message }) => {
         <Input
           type="text"
           placeholder="Full Name"
-          {...register("name", { 
+          {...register("name", { // Changed from "name" to "email"
             required: "Full name is required",
             minLength: {
               value: 2,
@@ -41,7 +42,7 @@ const SignUp: React.FC<SignUpProps> = ({ onSignUp, message }) => {
             }
           })}
         />
-        {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name.message}</p>}
+        {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name?.message}</p>}
       </div>
       <div>
         <Input
