@@ -12,10 +12,10 @@ const SpotifyPlayer: React.FC<SpotifyPlayerProps> = ({ uri }) => {
       <iframe
         src={embedUrl}
         width="100%"
-        height="60"  // Height remains the same
+        height="100"  // Height remains the same
         allow="encrypted-media"
         title="Spotify Player"
-        className="w-full max-w-[300px] h-auto"  // Adjusted max width
+        className="w-full max-w-[300px]"  // Adjusted max width
       ></iframe>
     </div>
   );
