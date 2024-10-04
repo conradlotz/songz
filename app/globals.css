@@ -4,6 +4,8 @@
 
 body {
   font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--background); /* Replace with your actual background color */
+  color: var(--foreground); /* Replace with your actual foreground color */
 }
 
 @layer utilities {
@@ -68,15 +70,6 @@ body {
   }
 }
 
-@layer base {
-  * {
-    @apply border-border;
-  }
-  body {
-    @apply bg-background text-foreground;
-  }
-}
-
 .scrollbar-custom::-webkit-scrollbar {
   width: 10px;
 }
@@ -91,4 +84,20 @@ body {
 
 .scrollbar-custom::-webkit-scrollbar-thumb:hover {
   background: #555;
+}
+
+/* styles.css */
+.selection {
+  position: relative; /* Default position for desktop */
+  /* Other styles */
+}
+
+@media (max-width: 768px) { /* Adjust for mobile screens */
+  .selection {
+      position: fixed; /* Fix position for mobile */
+      bottom: 20px; /* Move to the bottom */
+      left: 50%; /* Center horizontally */
+      transform: translateX(-50%); /* Adjust for centering */
+      /* Other mobile-specific styles */
+  }
 }

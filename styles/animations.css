@@ -1,0 +1,67 @@
+@keyframes fireball {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(4); opacity: 0.7; }
+  100% { transform: scale(1); opacity: 0; }
+}
+
+@keyframes explosion {
+  0% { transform: scale(0); opacity: 1; }
+  50% { transform: scale(1); opacity: 0.7; }
+  100% { transform: scale(2); opacity: 0; }
+}
+
+@keyframes flicker {
+  0% { opacity: 1; }
+  25% { opacity: 0.75; }
+  50% { opacity: 0.5; }
+  75% { opacity: 0.75; }
+  100% { opacity: 1; }
+}
+
+@keyframes float {
+  0% { transform: translateY(0); }
+  50% { transform: translateY(-20px); }
+  100% { transform: translateY(0); }
+}
+
+@keyframes spark {
+  0% { transform: translate(0, 0); opacity: 1; }
+  100% { transform: translate(var(--tx), var(--ty)); opacity: 0; }
+}
+
+.fireball {
+  animation: fireball 1s ease-out forwards;
+}
+
+.explosion {
+  animation: explosion 0.5s ease-out forwards;
+  animation-delay: 0.5s;
+}
+
+.fire-group {
+  animation: flicker 0.5s ease-in-out infinite alternate;
+}
+
+.fire-path {
+  transform-origin: center bottom;
+  animation: float 3s ease-in-out infinite;
+}
+
+.spark {
+  --tx: 0;
+  --ty: 0;
+  opacity: 0;
+  animation: spark 1s ease-out infinite;
+}
+
+.spark:nth-child(2) {
+  --tx: -30px;
+  --ty: -50px;
+  animation-delay: 0.2s;
+}
+
+.spark:nth-child(3) {
+  --tx: 30px;
+  --ty: -50px;
+  animation-delay: 0.4s;
+}

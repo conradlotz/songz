@@ -159,7 +159,7 @@ export const getTopTracks = async (encodedUserId: string): Promise<any[]> => {
     const userId = parseInt(decrypt(encodedUserId), 10);
 
     const { rows: topTracks } = await query(`
-      SELECT s.*, r.rating
+      SELECT DISTINCT s.*, r.rating
       FROM songs s
       JOIN ratings r ON s.track_uri = r.song_uri
       WHERE r.song_uri IN (
@@ -171,6 +171,27 @@ export const getTopTracks = async (encodedUserId: string): Promise<any[]> => {
       LIMIT 100
     `, [userId]);
 
+    return topTracks;
+  } catch (error) {
+    console.error('Error in getTopTracks:', error);
+    throw error;
+  }
+};
+
+export const getOverallTopTracks = async (encodedUserId: string): Promise<any[]> => {
+  try {
+    const { rows: topTracks } = await query(`
+      SELECT DISTINCT s.*, r.rating
+      FROM songs s
+      JOIN ratings r ON s.track_uri = r.song_uri
+      WHERE r.song_uri IN (
+        SELECT song1_uri FROM user_matches
+        UNION
+        SELECT song2_uri FROM user_matches
+      )
+      ORDER BY r.rating DESC
+      LIMIT 100
+    `)
     return topTracks;
   } catch (error) {
     console.error('Error in getTopTracks:', error);
