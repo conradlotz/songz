@@ -32,9 +32,9 @@ interface SongsProps {
   isAuthenticated: boolean;
 }
 
-const Songs: React.FC<SongsProps> = ({ isAuthenticated: initialIsAuthenticated }) => {
+const Songs: React.FC<SongsProps> = () => {
   const queryClient = useQueryClient();
-  const [isAuthenticated, setIsAuthenticated] = useState(initialIsAuthenticated);
+  const [isAuthenticated, setIsAuthenticated] = useState(true);
   const [songs, setSongs] = useState<{ song1: Song; song2: Song } | null>(null);
   const [message, setMessage] = useState('');
   const [topTracks, setTopTracks] = useState<TopTrack[]>([]);
