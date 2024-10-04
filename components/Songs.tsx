@@ -28,9 +28,9 @@ let USER_ID = '';
 
 const PLACEHOLDER_IMAGE = '/image/placeholder.webp';
 
-  interface SongsProps {
-    isAuthenticated: boolean;
-  }
+interface SongsProps {
+  isAuthenticated: boolean;
+}
 
 const Songs: React.FC<SongsProps> = ({ isAuthenticated: initialIsAuthenticated }) => {
   const queryClient = useQueryClient();
