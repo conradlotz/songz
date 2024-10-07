@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
 interface SignUpProps {
-  onSignUp: (email: string, password: string) => Promise<void>;
+  onSignUp: (name: string, email: string, password: string) => Promise<void>;
   message: string;
 }
 
@@ -22,7 +22,7 @@ const SignUp: React.FC<SignUpProps> = ({ onSignUp, message }) => {
   const onSubmit = async (data: SignUpFormData) => {
     setIsSubmitting(true);
     try {
-      await onSignUp(data.email, data.password);
+      await onSignUp(data.name, data.email, data.password);
     } finally {
       setIsSubmitting(false);
     }
