@@ -9,6 +9,7 @@ initializePool();
 
 export default async function signup(req: NextApiRequest, res: NextApiResponse) {
   const { name, email, password } = req.body;
+  console.log('Signup attempt for:', { name, email });
 
   try {
     // Test the database connection

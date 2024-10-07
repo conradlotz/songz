@@ -1,4 +1,4 @@
 export interface SignUpProps {
-    onSignUp: (email: string, password: string) => void;
+    onSignUp: (name: string, email: string, password: string) => void;
     message: string;
   }

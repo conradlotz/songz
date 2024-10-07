@@ -34,7 +34,7 @@ const SignUp: React.FC<SignUpProps> = ({ onSignUp, message }) => {
         <Input
           type="text"
           placeholder="Full Name"
-          {...register("name", { // Changed from "name" to "email"
+          {...register("name", {
             required: "Full name is required",
             minLength: {
               value: 2,
@@ -90,6 +90,7 @@ const SignUp: React.FC<SignUpProps> = ({ onSignUp, message }) => {
       <Button type="submit" className="w-full" disabled={isSubmitting}>
         {isSubmitting ? 'Signing Up...' : 'Sign Up'}
       </Button>
+      {message && <p className="text-center mt-4">{message}</p>}
     </form>
   );
 };

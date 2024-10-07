@@ -152,9 +152,9 @@ const Songs: React.FC<SongsProps> = () => {
     setRefreshKey(prev => prev + 1);
   };
 
-  const handleSignUp = async (email: string, password: string) => {
+  const handleSignUp = async (name: string, email: string, password: string) => {
     try {
-      const response = await axios.post('/api/signup', { email, password });
+      const response = await axios.post('/api/signup', { name,email, password });
       if ((response.data as { success: boolean }).success) {
         // setMessage('Sign up successful. Please sign in.');
         setActiveTab("match");
