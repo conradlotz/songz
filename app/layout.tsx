@@ -2,6 +2,7 @@ import type { Metadata } from "next/types";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { generateFavicon } from "@/utils/generateFavicon";
+import Script from 'next/script'
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -25,15 +26,19 @@ export default function RootLayout({
     <html lang="en">
       <head>
         <link rel="icon" href={faviconUrl} />
-        <!-- Google tag (gtag.js) -->
-        <script async src="https://www.googletagmanager.com/gtag/js?id=G-1QJN3FY5V1"></script>
-        <script>
+        <Script
+        src="https://www.googletagmanager.com/gtag/js?id=G-1QJN3FY5V1"
+        strategy="afterInteractive"
+      />
+      <Script id="google-analytics" strategy="afterInteractive">
+        {`
           window.dataLayer = window.dataLayer || [];
-          function gtag(){dataLayer.push(arguments);}
+          function gtag(){window.dataLayer.push(arguments);}
           gtag('js', new Date());
 
           gtag('config', 'G-1QJN3FY5V1');
-        </script>
+        `}
+      </Script>
       </head>
       <body className={inter.className}>{children}</body>
     </html>
